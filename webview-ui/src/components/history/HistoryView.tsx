@@ -771,6 +771,14 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 						padding: "5px 20px 10px 10px",
 						//borderTop: "1px solid var(--vscode-panel-border)",
 					}}>
+					<div className="flex gap-2.5 mb-2.5">
+						<VSCodeButton appearance="secondary" onClick={() => handleBatchHistorySelect(true)} style={{ flex: 1 }}>
+							Select All
+						</VSCodeButton>
+						<VSCodeButton appearance="secondary" onClick={() => handleBatchHistorySelect(false)} style={{ flex: 1 }}>
+							Select None
+						</VSCodeButton>
+					</div>
 					{selectedItems.length > 0 ? (
 						<DangerButton
 							aria-label="Delete selected items"

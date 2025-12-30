@@ -62,7 +62,7 @@ import McpResourceRow from "@/components/mcp/configuration/tabs/installed/server
 import McpToolRow from "@/components/mcp/configuration/tabs/installed/server-row/McpToolRow"
 import { PLATFORM_CONFIG, PlatformType } from "@/config/platform.config"
 import { useExtensionState } from "@/context/ExtensionStateContext"
-import { TaskServiceClient, UiServiceClient } from "@/services/grpc-client"
+import { FileServiceClient, TaskServiceClient, UiServiceClient } from "@/services/grpc-client"
 import { findMatchingResourceOrTemplate, getMcpServerDisplayName } from "@/utils/mcp"
 import CodeAccordian from "../common/CodeAccordian"
 import HeroTooltip from "../common/HeroTooltip"
@@ -89,6 +89,7 @@ import {
 	SecondaryRowStyle,
 	SpacingRowContainer,
 } from "./ChatRowStyles"
+import { DiffEditRow } from "./DiffEditRow"
 import { ErrorBlockTitle } from "./ErrorBlockTitle"
 import ErrorRow from "./ErrorRow"
 import HookMessage from "./HookMessage"
@@ -345,6 +346,44 @@ const CommandOutput = memo(
 			return null
 		}
 
+		// Check if output contains a log file path indicator
+		const logFilePathMatch = output.match(/📋 Output is being logged to: ([^\n]+)/)
+		const logFilePath = logFilePathMatch ? logFilePathMatch[1].trim() : null
+
+		// Render output with clickable log file path
+		const renderOutput = () => {
+			if (!logFilePath) {
+				return <CodeBlock forceWrap={true} source={`${"```"}shell\n${output}\n${"```"}`} />
+			}
+
+			// Split output into parts: before log path, log path line, after log path
+			const logPathLineStart = output.indexOf("📋 Output is being logged to:")
+			const logPathLineEnd = output.indexOf("\n", logPathLineStart)
+			const beforeLogPath = output.substring(0, logPathLineStart)
+			const afterLogPath = logPathLineEnd !== -1 ? output.substring(logPathLineEnd) : ""
+
+			// Extract just the filename from the full path for display
+			const fileName = logFilePath.split("/").pop() || logFilePath
+
+			return (
+				<>
+					{beforeLogPath && <CodeBlock forceWrap={true} source={`${"```"}shell\n${beforeLogPath}\n${"```"}`} />}
+					<div
+						className="flex flex-wrap items-center gap-1.5 px-3 py-2 mx-2 my-1.5 rounded bg-banner-background cursor-pointer hover:brightness-110 transition-colors"
+						onClick={() => {
+							FileServiceClient.openFile(StringRequest.create({ value: logFilePath })).catch((err) =>
+								console.error("Failed to open log file:", err),
+							)
+						}}
+						title={`Click to open: ${logFilePath}`}>
+						<span className="shrink-0">📋 Output is being logged to:</span>
+						<span className="text-vscode-textLink-foreground underline break-all">{fileName}</span>
+					</div>
+					{afterLogPath && <CodeBlock forceWrap={true} source={`${"```"}shell\n${afterLogPath}\n${"```"}`} />}
+				</>
+			)
+		}
+
 		return (
 			<div
 				style={{
@@ -368,9 +407,7 @@ const CommandOutput = memo(
 						backgroundColor: TERMINAL_CODE_BLOCK_BG_COLOR,
 						borderRadius: defaultBorderRadius,
 					}}>
-					<div style={{ backgroundColor: TERMINAL_CODE_BLOCK_BG_COLOR, borderRadius: defaultBorderRadius }}>
-						<CodeBlock fontSize={codeBlockFontSize} forceWrap={true} source={`${"```"}shell\n${output}\n${"```"}`} />
-					</div>
+					<div style={{ backgroundColor: TERMINAL_CODE_BLOCK_BG_COLOR }}>{renderOutput()}</div>
 				</div>
 				{/* Show notch only if there's more than 5 lines */}
 				{lineCount > 5 && (
@@ -494,7 +531,8 @@ export const ChatRowContent = memo(
 		onSetQuote,
 		onCancelCommand,
 	}: ChatRowContentProps) => {
-		const { mcpServers, mcpMarketplaceCatalog, onRelinquishControl, vscodeTerminalExecutionMode } = useExtensionState()
+		const { backgroundEditEnabled, mcpServers, mcpMarketplaceCatalog, onRelinquishControl, vscodeTerminalExecutionMode } =
+			useExtensionState()
 		const [seeNewChangesDisabled, setSeeNewChangesDisabled] = useState(false)
 		const [explainChangesDisabled, setExplainChangesDisabled] = useState(false)
 		const [quoteButtonState, setQuoteButtonState] = useState<QuoteButtonState>({
@@ -859,6 +897,9 @@ export const ChatRowContent = memo(
 
 			switch (tool.tool) {
 				case "editedExistingFile":
+					const content = tool?.content || ""
+					const isApplyingPatch = content?.startsWith("%%bash") && !content.endsWith("*** End Patch\nEOF")
+					const editToolTitle = isApplyingPatch ? "Patch" : "Edit"
 					return (
 						<PrimaryRowStyle isExpanded={isExpanded} isLast={isLast}>
 							<ApprovalContainer
@@ -881,7 +922,7 @@ export const ChatRowContent = memo(
 											)
 										)}
 										<RowTitle isExpanded={isExpanded} isLast={isLast}>
-											Edit
+											{editToolTitle}
 										</RowTitle>
 										{tool.operationIsLocatedInWorkspace === false && (
 											<RowIcon isLast={isLast}>
@@ -891,14 +932,22 @@ export const ChatRowContent = memo(
 
 										<HeroTooltip content={tool.path!}>
 											<RowItemExpandable fullWidth={true} isExpanded={isExpanded} isLast={isLast}>
-												<CodeAccordian
-													// isLoading={message.partial}
-													code={tool.content}
-													isExpanded={isExpanded}
-													maxHeight={rowItemExpandedMaxHeight}
-													onToggleExpand={handleToggle}
-													path={tool.path!}
-												/>
+												{backgroundEditEnabled && tool.path && tool.content ? (
+													<DiffEditRow
+														isLoading={message.partial}
+														patch={tool.content}
+														path={tool.path}
+													/>
+												) : (
+													<CodeAccordian
+														// isLoading={message.partial}
+														code={tool.content}
+														isExpanded={isExpanded}
+														maxHeight={rowItemExpandedMaxHeight}
+														onToggleExpand={handleToggle}
+														path={tool.path!}
+													/>
+												)}
 											</RowItemExpandable>
 										</HeroTooltip>
 									</RowHeader>
@@ -982,14 +1031,18 @@ export const ChatRowContent = memo(
 
 										<HeroTooltip content={tool.path!}>
 											<RowItemExpandable fullWidth={true} isExpanded={isExpanded} isLast={isLast}>
-												<CodeAccordian
-													code={tool.content!}
-													isExpanded={isExpanded}
-													isLoading={message.partial}
-													maxHeight={rowItemExpandedMaxHeight}
-													onToggleExpand={handleToggle}
-													path={tool.path!}
-												/>
+												{backgroundEditEnabled && tool.path && tool.content ? (
+													<DiffEditRow patch={tool.content} path={tool.path} />
+												) : (
+													<CodeAccordian
+														code={tool.content!}
+														isExpanded={isExpanded}
+														isLoading={message.partial}
+														maxHeight={rowItemExpandedMaxHeight}
+														onToggleExpand={handleToggle}
+														path={tool.path!}
+													/>
+												)}
 											</RowItemExpandable>
 										</HeroTooltip>
 									</RowHeader>
@@ -1599,16 +1652,16 @@ export const ChatRowContent = memo(
 			}
 
 			// Compact Cline SVG icon component
-			const ClineIcon = () => (
-				<svg height="16" style={{ marginBottom: "-1.5px" }} viewBox="0 0 92 96" width="16">
-					<g fill="currentColor">
-						<path d="M65.4492701,16.3 C76.3374701,16.3 85.1635558,25.16479 85.1635558,36.1 L85.1635558,42.7 L90.9027661,54.1647464 C91.4694141,55.2966923 91.4668177,56.6300535 90.8957658,57.7597839 L85.1635558,69.1 L85.1635558,75.7 C85.1635558,86.63554 76.3374701,95.5 65.4492701,95.5 L26.0206986,95.5 C15.1328272,95.5 6.30641291,86.63554 6.30641291,75.7 L6.30641291,69.1 L0.448507752,57.7954874 C-0.14693501,56.6464093 -0.149634367,55.2802504 0.441262896,54.1288283 L6.30641291,42.7 L6.30641291,36.1 C6.30641291,25.16479 15.1328272,16.3 26.0206986,16.3 L65.4492701,16.3 Z M62.9301895,22 L29.189529,22 C19.8723267,22 12.3191987,29.5552188 12.3191987,38.875 L12.3191987,44.5 L7.44288578,53.9634655 C6.84794449,55.1180686 6.85066096,56.4896598 7.45017099,57.6418974 L12.3191987,67 L12.3191987,72.625 C12.3191987,81.9450625 19.8723267,89.5 29.189529,89.5 L62.9301895,89.5 C72.2476729,89.5 79.8005198,81.9450625 79.8005198,72.625 L79.8005198,67 L84.5682187,57.6061395 C85.1432011,56.473244 85.1458141,55.1345713 84.5752587,53.9994398 L79.8005198,44.5 L79.8005198,38.875 C79.8005198,29.5552188 72.2476729,22 62.9301895,22 Z" />
-						<ellipse cx="45.7349843" cy="11" rx="12" ry="14" />
-						<ellipse cx="33.5" cy="55.5" rx="8" ry="9" />
-						<ellipse cx="57.5" cy="55.5" rx="8" ry="9" />
-					</g>
-				</svg>
-			)
+			// const ClineIcon = () => (
+			// 	<svg height="16" style={{ marginBottom: "-1.5px" }} viewBox="0 0 92 96" width="16">
+			// 		<g fill="currentColor">
+			// 			<path d="M65.4492701,16.3 C76.3374701,16.3 85.1635558,25.16479 85.1635558,36.1 L85.1635558,42.7 L90.9027661,54.1647464 C91.4694141,55.2966923 91.4668177,56.6300535 90.8957658,57.7597839 L85.1635558,69.1 L85.1635558,75.7 C85.1635558,86.63554 76.3374701,95.5 65.4492701,95.5 L26.0206986,95.5 C15.1328272,95.5 6.30641291,86.63554 6.30641291,75.7 L6.30641291,69.1 L0.448507752,57.7954874 C-0.14693501,56.6464093 -0.149634367,55.2802504 0.441262896,54.1288283 L6.30641291,42.7 L6.30641291,36.1 C6.30641291,25.16479 15.1328272,16.3 26.0206986,16.3 L65.4492701,16.3 Z M62.9301895,22 L29.189529,22 C19.8723267,22 12.3191987,29.5552188 12.3191987,38.875 L12.3191987,44.5 L7.44288578,53.9634655 C6.84794449,55.1180686 6.85066096,56.4896598 7.45017099,57.6418974 L12.3191987,67 L12.3191987,72.625 C12.3191987,81.9450625 19.8723267,89.5 29.189529,89.5 L62.9301895,89.5 C72.2476729,89.5 79.8005198,81.9450625 79.8005198,72.625 L79.8005198,67 L84.5682187,57.6061395 C85.1432011,56.473244 85.1458141,55.1345713 84.5752587,53.9994398 L79.8005198,44.5 L79.8005198,38.875 C79.8005198,29.5552188 72.2476729,22 62.9301895,22 Z" />
+			// 			<ellipse cx="45.7349843" cy="11" rx="12" ry="14" />
+			// 			<ellipse cx="33.5" cy="55.5" rx="8" ry="9" />
+			// 			<ellipse cx="57.5" cy="55.5" rx="8" ry="9" />
+			// 		</g>
+			// 	</svg>
+			// )
 
 			// Customize icon and title for subagent commands
 			const displayIcon = isSubagentCommand ? (
@@ -1708,7 +1761,7 @@ export const ChatRowContent = memo(
 															? "Pending"
 															: isCommandCompleted
 																? "Completed"
-																: "Not Completed"}
+																: "Skipped"}
 												</span>
 											</div>
 											<div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
@@ -2564,9 +2617,9 @@ export const ChatRowContent = memo(
 							<div
 								style={{
 									padding: 8,
-									backgroundColor: "rgba(0, 122, 204, 0.1)",
+									backgroundColor: "color-mix(in srgb, var(--vscode-textLink-foreground) 10%, transparent)",
 									borderRadius: 3,
-									border: "1px solid rgba(0, 122, 204, 0.3)",
+									border: "1px solid color-mix(in srgb, var(--vscode-textLink-foreground) 30%, transparent)",
 								}}>
 								<div
 									style={{

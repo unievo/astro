@@ -1,6 +1,5 @@
 import { setTimeout as setTimeoutPromise } from "node:timers/promises"
 import { Controller } from "@core/controller"
-import { productName } from "@shared/Configuration"
 import { BrowserActionResult } from "@shared/ExtensionMessage"
 import { fileExistsAtPath } from "@utils/fs"
 import axios from "axios"
@@ -11,7 +10,6 @@ import pWaitFor from "p-wait-for"
 import * as path from "path"
 import type { ConsoleMessage, ScreenshotOptions } from "puppeteer-core"
 import { Browser, connect, launch, Page, TimeoutError } from "puppeteer-core"
-import * as vscode from "vscode"
 import { StateManager } from "@/core/storage/StateManager"
 import { telemetryService } from "@/services/telemetry"
 import { discoverChromeInstances, isPortOpen, testBrowserConnection } from "./BrowserDiscovery"
@@ -73,24 +71,9 @@ export class BrowserSession {
 		}
 	}
 
-	/**
-	 * Migrates the chromeExecutablePath setting from VSCode configuration to browserSettings
-	 */
-	private async migrateChromeExecutablePathSetting(): Promise<void> {
-		const config = vscode.workspace.getConfiguration(productName)
-		const configPath = vscode.workspace.getConfiguration(productName).get<string>("chromeExecutablePath")
-
-		if (configPath !== undefined) {
-			this.stateManager.getGlobalSettingsKey("browserSettings").chromeExecutablePath = configPath
-			// Remove from VSCode configuration
-			await config.update("chromeExecutablePath", undefined, true)
-		}
-	}
-
 	async getDetectedChromePath(): Promise<{ path: string; isBundled: boolean }> {
 		// First check browserSettings (from UI, stored in global state)
 		const browserSettings = this.stateManager.getGlobalSettingsKey("browserSettings")
-		await this.migrateChromeExecutablePathSetting()
 		if (browserSettings.chromeExecutablePath && (await fileExistsAtPath(browserSettings.chromeExecutablePath))) {
 			return {
 				path: browserSettings.chromeExecutablePath,

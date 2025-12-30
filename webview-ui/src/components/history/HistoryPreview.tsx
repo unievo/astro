@@ -318,7 +318,7 @@ const HistoryPreview = ({ showHistoryView }: HistoryPreviewProps) => {
 								style={{
 									display: "flex",
 									alignItems: "center",
-									justifyContent: "flex-start",
+									justifyContent: "center",
 								}}>
 								<VSCodeButton
 									appearance="icon"
@@ -341,10 +341,10 @@ const HistoryPreview = ({ showHistoryView }: HistoryPreviewProps) => {
 					) : (
 						<div
 							style={{
-								textAlign: "center",
+								textAlign: "left",
 								color: "var(--vscode-descriptionForeground)",
-								fontSize: "11px",
-								padding: "10px 0",
+								fontSize: "12px",
+								padding: "5px 4px",
 							}}>
 							No task history available {showCurrentWorkspaceOnly ? "for the current workspace." : "."}
 						</div>

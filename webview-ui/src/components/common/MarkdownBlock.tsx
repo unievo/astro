@@ -297,11 +297,11 @@ const StyledMarkdown = styled.div<{ compact?: boolean; fontSize?: number }>`
 		}
 	}
 
-	hr, ul {
+	hr, ul, ol {
 		margin: 13px 0;
 	}
 
-	li > ul {
+	li > ul, li > ol {
 		margin: 4px 0; /* or 0 if you want them very tight */
 	}
 
