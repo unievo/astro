@@ -3,6 +3,9 @@ import { ChevronsDownUpIcon, FilePlus, FileText, FileX } from "lucide-react"
 import { memo, useEffect, useMemo, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 import { FileServiceClient } from "@/services/grpc-client"
+import { extractFileName } from "@/utils/format"
+import { cleanPathPrefix } from "../common/CodeAccordian"
+import { rowItemFullFilePath } from "../config"
 
 interface Patch {
 	action: string
@@ -100,15 +103,30 @@ const FileBlock = memo<{ file: Patch; isStreaming: boolean }>(
 		const ActionIcon = actionStyle.icon
 
 		return (
-			<div className="p-0 bg-code rounded-m">
+			<div className="p-0 bg-code rounded-md">
 				<button
 					className="w-full flex items-center gap-2 p-1 bg-code transition-colors rounded-t-xs justify-between cursor-pointer"
 					onClick={() => setIsExpanded((prev) => !prev)}
 					type="button">
-					<div className="flex items-center gap-3">
-						<div className={cn("flex items-center gap-2", actionStyle.borderClass)}>
-							<ActionIcon className={cn("w-4 h-4", actionStyle.iconClass)} />
-							<span className="font-medium">{file.path}</span>
+					<div className="flex items-center gap-0 min-w-0">
+						<div className={cn("flex items-center gap-0 min-w-0", actionStyle.borderClass)}>
+							{/* <ActionIcon className={cn("w-5 h-5", actionStyle.iconClass)} /> */}
+							{/* <span className="font-normal">{file.path}</span> */}
+							<span
+								style={{
+									whiteSpace: "nowrap",
+									overflow: "hidden",
+									textOverflow: "ellipsis",
+									marginRight: "8px",
+									// trick to get ellipsis at beginning of string
+									direction: "rtl",
+									textAlign: "left",
+									minWidth: 0,
+									flexShrink: 1,
+								}}>
+								{!rowItemFullFilePath && extractFileName(cleanPathPrefix(file.path ?? "")) + "\u200E"}
+								{rowItemFullFilePath && cleanPathPrefix(file.path ?? "") + "\u200E"}
+							</span>
 							<span
 								className={`codicon codicon-link-external`}
 								onClick={(e) => {
@@ -124,7 +142,7 @@ const FileBlock = memo<{ file: Patch; isStreaming: boolean }>(
 								}}></span>
 						</div>
 					</div>
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-0.5">
 						<DiffStats additions={file.additions} deletions={file.deletions} />
 						<span className={`codicon codicon-chevron-${isExpanded ? "up" : "down"}`}></span>
 					</div>

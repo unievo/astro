@@ -1021,7 +1021,7 @@ export const ChatRowContent = memo(
 											)
 										)}
 										<RowTitle isExpanded={isExpanded} isLast={isLast}>
-											Create
+											New
 										</RowTitle>
 										{tool.operationIsLocatedInWorkspace === false && (
 											<RowIcon isLast={isLast}>
@@ -1853,6 +1853,7 @@ export const ChatRowContent = memo(
 												}}>
 												<div
 													style={{
+														fontWeight: "bold",
 														backgroundColor: CHAT_ROW_EXPANDED_BG_COLOR,
 														borderRadius: defaultBorderRadius,
 													}}>
