@@ -20,8 +20,8 @@ const AboutSection = ({ version, renderSectionHeader }: AboutSectionProps) => {
 					</div>
 					<div style={{ marginRight: "-10px" }}>
 						<p>
-							Astro is a foundation for custom AI software agents that can have specialized functionalities, with
-							additional customizations, features and capabilities applicable to different domains.
+							Astro is a foundation for custom AI software agents that can have specialized functionalities,
+							features and capabilities.
 						</p>
 						<p>If you have any issues, questions or feedback, feel free to contact us on:</p>
 						<p style={{ margin: "0 0 0 5px", fontSize: "13px", textAlign: "center" }}>

@@ -3,8 +3,8 @@ import { name, publisher } from "../../package.json"
 
 // Base
 export const baseName = "Cline"
-export const baseVersion = "v3.45.0"
-export const baseVersionUrl = `https://github.com/cline/cline/blob/main/CHANGELOG.md#3450`
+export const baseVersion = "v3.46.1"
+export const baseVersionUrl = `https://github.com/cline/cline/blob/main/CHANGELOG.md#3461`
 
 // Product
 export const agentName = "Astro"
@@ -24,7 +24,7 @@ export const gitWorkflowsRepo = ""
 export const enableDictation = false
 export const enableYoloMode = true
 export const enableTelemetrySettings = false
-export const maxHistoryPreviewItems = 10
+export const maxHistoryPreviewItems = 9
 export const mcpLibraryEnabled = false
 export const enableNewInstructionsDefaultSetting = false
 export const mcpServerIncludeFullSchema_ToolsMaxCount = 5

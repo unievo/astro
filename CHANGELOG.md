@@ -1,22 +1,26 @@
 # Changelog
 
+## [2.2.0]
+
+- Chat UI Updates
+
+- Base Features Update [v3.46.1](https://github.com/cline/cline/blob/main/CHANGELOG.md#3461) 
+
 ## [2.1.0]
 
 - GPT-5.2, Gemini 3 Flash Preview
-- New free models in the Cline provider
 
-- Cline Features Update. [v3.45.0](https://github.com/cline/cline/blob/main/CHANGELOG.md#3450) 
+- Base Features Update [v3.45.0](https://github.com/cline/cline/blob/main/CHANGELOG.md#3450) 
 
 ## [2.0.0]
 
 - Extensive Chat Interface redesign for a more compact and streamlined UI/UX
 
-- Cline Features Update. [v3.40.1](https://github.com/cline/cline/blob/main/CHANGELOG.md#3401) 
+- Base Features Update [v3.40.1](https://github.com/cline/cline/blob/main/CHANGELOG.md#3401) 
 
 ## [1.2.0]
 
-Base Features Update:
-- Claude Sonnet 4.5: Support for Sonnet 4.5 in multiple API providers. [v3.32.5](https://github.com/cline/cline/blob/main/CHANGELOG.md#3325)
+ - Base Features Update: Claude Sonnet 4.5: Support for Sonnet 4.5 in multiple API providers. [v3.32.5](https://github.com/cline/cline/blob/main/CHANGELOG.md#3325)
 
 ## [1.1.0]
 

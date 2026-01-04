@@ -1,7 +1,8 @@
-import { baseVersion, baseVersionUrl, discordUrl, repoUrl, xUrl } from "@shared/Configuration"
+import { discordUrl, repoUrl, xUrl } from "@shared/Configuration"
 import { VSCodeButton, VSCodeLink } from "@vscode/webview-ui-toolkit/react"
 import { CSSProperties, memo } from "react"
 import { getAsVar, VSC_DESCRIPTION_FOREGROUND, VSC_INPUT_BACKGROUND } from "@/utils/vscStyles"
+import { defaultBorderRadius } from "../config"
 
 interface AnnouncementProps {
 	version: string
@@ -10,14 +11,14 @@ interface AnnouncementProps {
 
 const containerStyle: CSSProperties = {
 	backgroundColor: getAsVar(VSC_INPUT_BACKGROUND),
-	borderRadius: "10px",
+	borderRadius: defaultBorderRadius,
 	padding: "5px",
-	margin: "5px 5px 5px 17px",
+	margin: "5px 1px 5px 17px",
 	position: "relative",
 	flexShrink: 0,
 }
-const closeIconStyle: CSSProperties = { position: "absolute", top: "8px", right: "8px" }
-const h3TitleStyle: CSSProperties = { margin: "5px 14px 8px", fontSize: "14px", fontWeight: "bold" }
+const closeIconStyle: CSSProperties = { position: "absolute", top: "4px", right: "4px" }
+const h3TitleStyle: CSSProperties = { margin: "0px 5px", fontSize: "14px", fontWeight: "normal" }
 const h4TitleStyle: CSSProperties = { margin: "0 0 8px", fontWeight: "bold" }
 const ulStyle: CSSProperties = { fontSize: "12px", listStyle: "disc", margin: "4px", marginBottom: "-10px", paddingLeft: "10px" }
 const _accountIconStyle: CSSProperties = { fontSize: 11 }
@@ -25,10 +26,10 @@ const hrStyle: CSSProperties = {
 	height: "1px",
 	background: getAsVar(VSC_DESCRIPTION_FOREGROUND),
 	opacity: 0.1,
-	marginTop: "10px",
+	marginTop: "5px",
 	marginBottom: "5px",
 }
-const linkContainerStyle: CSSProperties = { margin: "0 0 0 14px", fontSize: "12px", textAlign: "left" }
+const linkContainerStyle: CSSProperties = { margin: "0 0 0 5px", fontSize: "12px", textAlign: "left" }
 const linkStyle: CSSProperties = { display: "inline", fontSize: "11px" }
 
 /*
@@ -50,21 +51,16 @@ const Announcement = ({ version, hideAnnouncement }: AnnouncementProps) => {
 			<div style={h3TitleStyle}>
 				Release <a href="https://github.com/unievo/astro/blob/main/CHANGELOG.md">v{minorVersion}</a>
 			</div>
-			{
+			{/* {
 				<ul style={ulStyle}>
 					<li>GPT-5.2, Gemini 3 Flash Preview</li>
 					<li>New free models in the Cline provider</li>
 					<div className="mt-2" />
 					<b style={{ fontSize: 12 }}>
-						Cline Features Update: <a href={`${baseVersionUrl}`}>{baseVersion}</a>
+						Features Update: <a href={`${baseVersionUrl}`}>{baseVersion}</a>
 					</b>
-					<div className="mt-2 mb-4" />
-					{/* <li>
-						<b>Update to </b> -{" "}
-						<a href={`${baseVersionUrl}`}>{baseVersion}</a>
-					</li> */}
 				</ul>
-			}
+			} */}
 
 			{/* <Accordion className="" isCompact>
 				<AccordionItem
