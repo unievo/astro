@@ -138,10 +138,10 @@ export const completionRowMargin = "20px 0px 10px 0px"
 export const completionTextMargin = "20px 0px 0px 0px"
 
 // User message
-export const userMessageTextColor = "var(--vscode-badge-foreground)"
-export const userMessageBackground = "color-mix(in srgb, var(--vscode-button-background) 30%, var(--vscode-editor-background))"
+export const userMessageTextColor = "var(--vscode-foreground)"
+export const userMessageBackground = "color-mix(in srgb, var(--vscode-button-background) 50%, var(--vscode-editor-background))"
 export const userMessageHoverBackground =
-	"color-mix(in srgb, var(--vscode-button-background) 40%, var(--vscode-editor-background))"
+	"color-mix(in srgb, var(--vscode-button-background) 60%, var(--vscode-editor-background))"
 export const userMessagePadding = "10px 10px"
 export const userMessageMargin = "10px 0px 10px 0px"
 

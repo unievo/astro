@@ -1,6 +1,6 @@
 import { ClineMessage } from "@shared/ExtensionMessage"
 import React, { memo, useCallback } from "react"
-import { defaultBorderRadius, userMessageBackground } from "@/components/config"
+import { defaultBorderRadius, userMessageBackground, userMessageTextColor } from "@/components/config"
 import { cn } from "@/lib/utils"
 import { highlightText } from "./Highlights"
 
@@ -54,18 +54,14 @@ export const StickyUserMessage: React.FC<StickyUserMessageProps> = memo(
 				role="button"
 				style={{
 					backgroundColor: userMessageBackground,
+					color: userMessageTextColor,
 					borderRadius: defaultBorderRadius,
 					margin: "0 -8px",
 				}}
 				tabIndex={0}
 				title="Click to scroll to your message">
 				{/* Message text (truncated via CSS text-ellipsis) */}
-				<div
-					className={cn(
-						"flex-1 min-w-0 text-sm text-badge-foreground",
-						"overflow-hidden text-ellipsis whitespace-nowrap",
-						"ph-no-capture",
-					)}>
+				<div className={cn("flex-1 min-w-0 text-sm", "overflow-hidden text-ellipsis whitespace-nowrap", "ph-no-capture")}>
 					{highlightText(messageText, false)}
 				</div>
 			</div>
