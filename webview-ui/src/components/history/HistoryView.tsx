@@ -1,5 +1,5 @@
 import { BooleanRequest, EmptyRequest, StringArrayRequest, StringRequest } from "@shared/proto/cline/common"
-import { GetTaskHistoryRequest, TaskFavoriteRequest } from "@shared/proto/cline/task"
+import { GetTaskHistoryRequest } from "@shared/proto/cline/task"
 import { VSCodeButton, VSCodeCheckbox, VSCodeRadio, VSCodeRadioGroup, VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
 import Fuse, { FuseResult } from "fuse.js"
 import { memo, useCallback, useEffect, useMemo, useState } from "react"
@@ -89,44 +89,44 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 		loadTaskHistory()
 	}, [loadTaskHistory, showFavoritesOnly, showCurrentWorkspaceOnly])
 
-	const toggleFavorite = useCallback(
-		async (taskId: string, currentValue: boolean) => {
-			// Optimistic UI update
-			setPendingFavoriteToggles((prev) => ({ ...prev, [taskId]: !currentValue }))
+	// const toggleFavorite = useCallback(
+	// 	async (taskId: string, currentValue: boolean) => {
+	// 		// Optimistic UI update
+	// 		setPendingFavoriteToggles((prev) => ({ ...prev, [taskId]: !currentValue }))
 
-			try {
-				await TaskServiceClient.toggleTaskFavorite(
-					TaskFavoriteRequest.create({
-						taskId,
-						isFavorited: !currentValue,
-					}),
-				)
+	// 		try {
+	// 			await TaskServiceClient.toggleTaskFavorite(
+	// 				TaskFavoriteRequest.create({
+	// 					taskId,
+	// 					isFavorited: !currentValue,
+	// 				}),
+	// 			)
 
-				// Refresh if either filter is active to ensure proper combined filtering
-				if (showFavoritesOnly || showCurrentWorkspaceOnly) {
-					loadTaskHistory()
-				}
-			} catch (err) {
-				console.error(`[FAVORITE_TOGGLE_UI] Error for task ${taskId}:`, err)
-				// Revert optimistic update
-				setPendingFavoriteToggles((prev) => {
-					const updated = { ...prev }
-					delete updated[taskId]
-					return updated
-				})
-			} finally {
-				// Clean up pending state after 1 second
-				setTimeout(() => {
-					setPendingFavoriteToggles((prev) => {
-						const updated = { ...prev }
-						delete updated[taskId]
-						return updated
-					})
-				}, 1000)
-			}
-		},
-		[showFavoritesOnly, loadTaskHistory],
-	)
+	// 			// Refresh if either filter is active to ensure proper combined filtering
+	// 			if (showFavoritesOnly || showCurrentWorkspaceOnly) {
+	// 				loadTaskHistory()
+	// 			}
+	// 		} catch (err) {
+	// 			console.error(`[FAVORITE_TOGGLE_UI] Error for task ${taskId}:`, err)
+	// 			// Revert optimistic update
+	// 			setPendingFavoriteToggles((prev) => {
+	// 				const updated = { ...prev }
+	// 				delete updated[taskId]
+	// 				return updated
+	// 			})
+	// 		} finally {
+	// 			// Clean up pending state after 1 second
+	// 			setTimeout(() => {
+	// 				setPendingFavoriteToggles((prev) => {
+	// 					const updated = { ...prev }
+	// 					delete updated[taskId]
+	// 					return updated
+	// 				})
+	// 			}, 1000)
+	// 		}
+	// 	},
+	// 	[showFavoritesOnly, loadTaskHistory],
+	// )
 
 	// Use the onRelinquishControl hook instead of message event
 	useEffect(() => {
@@ -414,17 +414,17 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 							<CustomFilterRadio
 								checked={showCurrentWorkspaceOnly}
 								icon=""
-								label="Workspace"
+								label="Current Workspace"
 								onChange={() => setShowCurrentWorkspaceOnly(!showCurrentWorkspaceOnly)}
 							/>
-							<CustomFilterRadio
+							{/* <CustomFilterRadio
 								checked={showFavoritesOnly}
 								icon=""
 								label="Favorites"
 								onChange={() => setShowFavoritesOnly(!showFavoritesOnly)}
-							/>
+							/> */}
 						</div>
-						<div
+						{/* <div
 							style={{
 								margin: "5px 5px",
 								gap: "5px",
@@ -454,7 +454,7 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 								}}>
 								Select None
 							</VSCodeButton>
-						</div>
+						</div> */}
 					</div>
 				</div>
 				<div style={{ flexGrow: 1, overflowY: "auto", margin: 0 }}>
@@ -470,6 +470,16 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 									cursor: "pointer",
 									display: "flex",
 								}}>
+								<VSCodeCheckbox
+									checked={selectedItems.includes(item.id)}
+									className="pl-2 pr-0 py-auto"
+									onClick={(e) => {
+										const checked = (e.target as HTMLInputElement).checked
+										handleHistorySelect(item.id, checked)
+										e.stopPropagation()
+									}}
+									style={{ scale: "0.9" }}
+								/>
 								<div
 									onClick={() => handleShowTaskWithId(item.id)}
 									style={{
@@ -477,7 +487,7 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 										display: "flex",
 										flexDirection: "column",
 										gap: "0px",
-										padding: "3px 5px 3px 8px",
+										padding: "0px 5px 0px 8px",
 										position: "relative",
 										flexGrow: 1,
 									}}>
@@ -487,22 +497,12 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 											alignItems: "center",
 											gap: "8px",
 										}}>
-										<VSCodeCheckbox
-											checked={selectedItems.includes(item.id)}
-											className="pl-0 pr-0 py-auto"
-											onClick={(e) => {
-												const checked = (e.target as HTMLInputElement).checked
-												handleHistorySelect(item.id, checked)
-												e.stopPropagation()
-											}}
-											style={{ scale: "0.9" }}
-										/>
 										<div
 											style={{
 												color: "var(--vscode-descriptionForeground)",
 												opacity: 0.7,
 												fontWeight: 400,
-												fontSize: "0.9em",
+												fontSize: "0.95em",
 												flex: 1,
 												overflow: "hidden",
 												textOverflow: "ellipsis",
@@ -538,7 +538,7 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 													</div>
 												</VSCodeButton>
 											)}
-											<VSCodeButton
+											{/* <VSCodeButton
 												appearance="icon"
 												aria-label={item.isFavorited ? "Remove from favorites" : "Add to favorites"}
 												onClick={(e) => {
@@ -569,11 +569,11 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 														fontSize: "13px",
 													}}
 												/>
-											</VSCodeButton>
+											</VSCodeButton> */}
 										</div>
 									</div>
 
-									<div style={{ marginBottom: "8px", position: "relative" }}>
+									<div style={{ marginBottom: "2px", position: "relative" }}>
 										<div
 											style={{
 												fontSize: "13px",
@@ -597,19 +597,25 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 											/>
 										</div>
 									</div>
+									{item.modelId && (
+										<div className="text-description -mt-1.5 mb-1 opacity-80" style={{ fontSize: "0.9em" }}>
+											Model: {item.modelId}
+										</div>
+									)}
 									<div
 										style={{
 											display: "flex",
 											flexDirection: "column",
 											gap: "4px",
-											marginTop: "-6px",
+											marginTop: "-5px",
 										}}>
 										<div
 											style={{
 												display: "flex",
 												justifyContent: "space-between",
 												alignItems: "center",
-												opacity: 0.7,
+												opacity: 0.8,
+												fontSize: "0.9em",
 												overflow: "hidden",
 											}}>
 											<div
@@ -618,7 +624,6 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 													alignItems: "center",
 													gap: "4px",
 													flexWrap: "wrap",
-													fontSize: "0.9em",
 												}}>
 												<span
 													style={{
@@ -639,7 +644,7 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 														style={{
 															fontSize: "12px",
 															fontWeight: "bold",
-															marginBottom: "-2px",
+															// marginBottom: "-2px",
 														}}
 													/>
 													{formatLargeNumber(item.tokensIn || 0)}
@@ -665,7 +670,7 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 											{!item.totalCost && <ExportButton itemId={item.id} />}
 										</div>
 
-										{!!(item.cacheWrites || item.cacheReads) && (
+										{/* {!!(item.cacheWrites || item.cacheReads) && (
 											<div
 												style={{
 													display: "flex",
@@ -721,15 +726,15 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 													</span>
 												)}
 											</div>
-										)}
-										{item.modelId && <div className="text-description">Model: {item.modelId}</div>}
+										)} */}
+										{/* {item.modelId && <div className="text-description text-sm -mt-1 opacity-80">Model: {item.modelId}</div>} */}
 										{!!item.totalCost && (
 											<div
 												style={{
 													display: "flex",
 													justifyContent: "space-between",
 													alignItems: "center",
-													marginTop: -2,
+													marginTop: -5,
 													fontSize: "0.9em",
 													opacity: 0.7,
 												}}>
@@ -768,14 +773,28 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 				</div>
 				<div
 					style={{
-						padding: "5px 20px 10px 10px",
+						padding: "10px 20px 10px 15px",
 						//borderTop: "1px solid var(--vscode-panel-border)",
 					}}>
-					<div className="flex gap-2.5 mb-2.5">
-						<VSCodeButton appearance="secondary" onClick={() => handleBatchHistorySelect(true)} style={{ flex: 1 }}>
+					<div className="flex gap-2.5 mb-1.5">
+						<VSCodeButton
+							appearance="icon"
+							className={`
+									bg-[var(--vscode-input-background)]
+									text-[var(--vscode-input-foreground)]
+								`}
+							onClick={() => handleBatchHistorySelect(true)}
+							style={{ flex: 1 }}>
 							Select All
 						</VSCodeButton>
-						<VSCodeButton appearance="secondary" onClick={() => handleBatchHistorySelect(false)} style={{ flex: 1 }}>
+						<VSCodeButton
+							appearance="icon"
+							className={`
+									bg-[var(--vscode-input-background)]
+									text-[var(--vscode-input-foreground)]
+								`}
+							onClick={() => handleBatchHistorySelect(false)}
+							style={{ flex: 1 }}>
 							Select None
 						</VSCodeButton>
 					</div>
@@ -800,7 +819,7 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 									.catch((error) => console.error("Error deleting task history:", error))
 									.finally(() => setDeleteAllDisabled(false))
 							}}
-							style={{ marginLeft: "5px", width: "100%" }}>
+							style={{ width: "100%" }}>
 							Delete All History{totalTasksSize !== null ? ` (${formatSize(totalTasksSize)})` : ""}
 						</DangerButton>
 					)}
