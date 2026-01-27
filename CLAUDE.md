@@ -14,7 +14,24 @@ This file is the secret sauce for working effectively in this codebase. It captu
 
 **What NOT to add:** Stuff you can figure out from reading a few files, obvious patterns, or standard practices. This file should be high-signal, not comprehensive.
 
-## gRPC/Protobuf Communication
+---
+
+## Table of Contents
+
+1. [Architecture & Communication](#architecture--communication)
+   - gRPC/Protobuf Communication
+2. [Feature Development](#feature-development)
+   - Adding Tools to System Prompt
+   - Modifying Default Slash Commands
+   - ChatRow Cancelled/Interrupted States
+3. [System Prompt Management](#system-prompt-management)
+   - Modifying System Prompt
+
+---
+
+## Architecture & Communication
+
+### gRPC/Protobuf Communication
 The extension and webview communicate via gRPC-like protocol over VS Code message passing.
 
 **Proto files live in `proto/`** (e.g., `proto/cline/task.proto`, `proto/cline/ui.proto`)
@@ -44,7 +61,11 @@ The extension and webview communicate via gRPC-like protocol over VS Code messag
 - `src/core/controller/task/explainChanges.ts` - Handler implementation
 - `webview-ui/src/components/chat/ChatRow.tsx` - UI rendering
 
-## Adding Tools to System Prompt
+---
+
+## Feature Development
+
+### Adding Tools to System Prompt
 This is tricky—multiple prompt variants and configs. **Always search for existing similar tools first and follow their pattern.** Look at the full chain from prompt definition → variant configs → handler → UI before implementing.
 
 1. **Add to `ClineDefaultTool` enum** in `src/shared/tools.ts`
@@ -61,7 +82,47 @@ This is tricky—multiple prompt variants and configs. **Always search for exist
 7. **Add to tool parsing** in `src/core/assistant-message/index.ts` if needed
 8. **If tool has UI feedback**: add `ClineSay` enum in proto, update `src/shared/ExtensionMessage.ts`, update `src/shared/proto-conversions/cline-message.ts`, update `webview-ui/src/components/chat/ChatRow.tsx`
 
-## Modifying System Prompt
+### Modifying Default Slash Commands
+
+Three places need updates:
+- `src/core/slash-commands/index.ts` - Command definitions
+- `src/core/prompts/commands.ts` - System prompt integration
+- `webview-ui/src/utils/slash-commands.ts` - Webview autocomplete
+
+### ChatRow Cancelled/Interrupted States
+
+When a ChatRow displays a loading/in-progress state (spinner), you must handle what happens when the task is cancelled. This is non-obvious because cancellation doesn't update the message content—you have to infer it from context.
+
+**The pattern:**
+1. A message has a `status` field (e.g., `"generating"`, `"complete"`, `"error"`) stored in `message.text` as JSON
+2. When cancelled mid-operation, the status stays `"generating"` forever—no one updates it
+3. To detect cancellation, check TWO conditions:
+   - `!isLast` — if this message is no longer the last message, something else happened after it (interrupted)
+   - `lastModifiedMessage?.ask === "resume_task" || "resume_completed_task"` — task was just cancelled and is waiting to resume
+
+**Example from `generate_explanation`:**
+```tsx
+const wasCancelled =
+    explanationInfo.status === "generating" &&
+    (!isLast ||
+        lastModifiedMessage?.ask === "resume_task" ||
+        lastModifiedMessage?.ask === "resume_completed_task")
+const isGenerating = explanationInfo.status === "generating" && !wasCancelled
+```
+
+**Why both checks?**
+- `!isLast` catches: cancelled → resumed → did other stuff → this old message is stale
+- `lastModifiedMessage?.ask === "resume_task"` catches: just cancelled, hasn't resumed yet, this message is still technically "last"
+
+**See also:** `BrowserSessionRow.tsx` uses similar pattern with `isLastApiReqInterrupted` and `isLastMessageResume`.
+
+**Backend side:** When streaming is cancelled, clean up properly (close tabs, clear comments, etc.) by checking `taskState.abort` after the streaming function returns.
+
+---
+
+## System Prompt Management
+
+### Modifying System Prompt
 **Read these first:** `src/core/prompts/system-prompt/README.md`, `tools/README.md`, `__tests__/README.md`
 
 System prompt is modular: **components** (reusable sections) + **variants** (model-specific configs) + **templates** (with `{{PLACEHOLDER}}` resolution).
@@ -89,37 +150,3 @@ System prompt is modular: **components** (reusable sections) + **variants** (mod
 UPDATE_SNAPSHOTS=true npm run test:unit
 ```
 Snapshots live in `__tests__/__snapshots__/`. Tests validate across model families and context variations (browser, MCP, focus chain).
-
-## Modifying Default Slash Commands
-Three places need updates:
-- `src/core/slash-commands/index.ts` - Command definitions
-- `src/core/prompts/commands.ts` - System prompt integration
-- `webview-ui/src/utils/slash-commands.ts` - Webview autocomplete
-
-## ChatRow Cancelled/Interrupted States
-When a ChatRow displays a loading/in-progress state (spinner), you must handle what happens when the task is cancelled. This is non-obvious because cancellation doesn't update the message content—you have to infer it from context.
-
-**The pattern:**
-1. A message has a `status` field (e.g., `"generating"`, `"complete"`, `"error"`) stored in `message.text` as JSON
-2. When cancelled mid-operation, the status stays `"generating"` forever—no one updates it
-3. To detect cancellation, check TWO conditions:
-   - `!isLast` — if this message is no longer the last message, something else happened after it (interrupted)
-   - `lastModifiedMessage?.ask === "resume_task" || "resume_completed_task"` — task was just cancelled and is waiting to resume
-
-**Example from `generate_explanation`:**
-```tsx
-const wasCancelled =
-    explanationInfo.status === "generating" &&
-    (!isLast ||
-        lastModifiedMessage?.ask === "resume_task" ||
-        lastModifiedMessage?.ask === "resume_completed_task")
-const isGenerating = explanationInfo.status === "generating" && !wasCancelled
-```
-
-**Why both checks?**
-- `!isLast` catches: cancelled → resumed → did other stuff → this old message is stale
-- `lastModifiedMessage?.ask === "resume_task"` catches: just cancelled, hasn't resumed yet, this message is still technically "last"
-
-**See also:** `BrowserSessionRow.tsx` uses similar pattern with `isLastApiReqInterrupted` and `isLastMessageResume`.
-
-**Backend side:** When streaming is cancelled, clean up properly (close tabs, clear comments, etc.) by checking `taskState.abort` after the streaming function returns.
